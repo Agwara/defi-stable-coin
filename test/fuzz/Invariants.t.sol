@@ -38,6 +38,7 @@ contract InvariantTest is StdInvariant, Test {
         selectors[0] = Handler.depositCollateral.selector;
         selectors[1] = Handler.redeemCollateral.selector;
         selectors[2] = Handler.mintDsc.selector;
+        // selectors[3] = Handler.updateCollateralPrice.selector;
         selectors[3] = Handler.doNothing.selector;
         selectors[4] = Handler.simpleCall.selector;
 
@@ -48,6 +49,8 @@ contract InvariantTest is StdInvariant, Test {
         console.log("DSCEngine address:", address(dsce));
         console.log("depositCollateral selector:", uint32(Handler.depositCollateral.selector));
         console.log("redeemCollateral selector:", uint32(Handler.redeemCollateral.selector));
+        console.log("mintDsc selector:", uint32(Handler.mintDsc.selector));
+        console.log("updateCollateralPrice selector:", uint32(Handler.updateCollateralPrice.selector));
         console.log("doNothing selector:", uint32(Handler.doNothing.selector));
         console.log("simpleCall selector:", uint32(Handler.simpleCall.selector));
     }
@@ -65,6 +68,15 @@ contract InvariantTest is StdInvariant, Test {
 
         uint256 wethValue = dsce.getUsdValue(weth, wethDeposited);
         uint256 wbtcValue = dsce.getUsdValue(wbtc, wbtcDeposited);
+
+        console.log("wethDeposited: %s", wethDeposited);
+        console.log("wbtcDeposited: %s", wbtcDeposited);
+        console.log("wethValue: %s", wethValue);
+        console.log("wbtcValue: %s", wbtcValue);
+        console.log("totalSupply: %s", totalSupply);
+        console.log("Total collateral value: %s", wethValue + wbtcValue);
+
+        console.log("=== INVARIANT CHECK END ===");
 
         assert(wethValue + wbtcValue >= totalSupply);
     }

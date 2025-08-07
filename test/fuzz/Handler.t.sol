@@ -213,6 +213,61 @@ contract Handler is Test {
         }
     }
 
+    function updateCollateralPrice(uint96 newPrice, uint256 collateralSeed) public {
+        console.log("HANDLER: updateCollateralPrice called");
+
+        // Get the current price first
+        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+        MockV3Aggregator priceFeed = MockV3Aggregator(dscEngine.getCollateralTokenPriceFeed(address(collateral)));
+
+        (, int256 currentPrice,,,) = priceFeed.latestRoundData();
+        console.log("Current price:", uint256(currentPrice));
+
+        // Instead of using newPrice directly, use it t~o determine a percentage change
+        // This keeps price changes more realistic
+
+        // Use the newPrice to determine a percentage change between -50% to +100%
+        uint256 percentageChange = bound(uint256(newPrice), 50, 200); // 50% to 200% of current price
+
+        // Calculate new price based on percentage
+        uint256 newPriceCalculated = (uint256(currentPrice) * percentageChange) / 100;
+
+        // Set absolute minimum and maximum bounds to prevent extreme values
+        uint256 absoluteMinPrice;
+        uint256 absoluteMaxPrice;
+
+        if (address(collateral) == address(weth)) {
+            // ETH bounds
+            absoluteMinPrice = 50000000000; // $500
+            absoluteMaxPrice = 1000000000000; // $10,000
+        } else {
+            // BTC bounds
+            absoluteMinPrice = 1000000000000; // $10,000
+            absoluteMaxPrice = 20000000000000; // $200,000
+        }
+
+        // Apply absolute bounds
+        if (newPriceCalculated < absoluteMinPrice) {
+            newPriceCalculated = absoluteMinPrice;
+        } else if (newPriceCalculated > absoluteMaxPrice) {
+            newPriceCalculated = absoluteMaxPrice;
+        }
+
+        console.log("Percentage of current price:", percentageChange);
+        console.log("New calculated price:", newPriceCalculated);
+        console.log("Collateral type:", address(collateral) == address(weth) ? "WETH" : "WBTC");
+
+        // Ensure the price is within int256 range
+        require(newPriceCalculated <= uint256(type(int256).max), "Price too large for int256");
+
+        // Update the price
+        priceFeed.updateAnswer(int256(newPriceCalculated));
+
+        // Log the final price to verify
+        (, int256 finalPrice,,,) = priceFeed.latestRoundData();
+        console.log("Final updated price:", uint256(finalPrice));
+    }
+
     // Add another simple function with basic logic
     function simpleCall() external {
         console.log("HANDLER: simpleCall executed");
